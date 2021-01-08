@@ -13,14 +13,19 @@ class UserController < ApplicationController
     requester_email = session.fetch('email')
     email_list = @form.email_list
 
-    pull_request_url = GithubService.new.create_new_user_pull_request(email_list, requester_email) || 'error-creating-pull-request'
+    pull_request_url = GithubService.new.create_new_user_pull_request(email_list, requester_email)
 
-    session['pull_request_url'] = pull_request_url
+    if pull_request_url then
+      session['pull_request_url'] = pull_request_url
 
-    notify_service = NotifyService.new
-    notify_service.new_user_email_support(email_list, requester_email, pull_request_url)
-    notify_service.new_user_email_user(email_list, requester_email, pull_request_url)
+      notify_service = NotifyService.new
+      notify_service.new_user_email_support(email_list, requester_email, pull_request_url)
+      notify_service.new_user_email_user(email_list, requester_email, pull_request_url)
 
-    redirect_to confirmation_user_path
+      redirect_to confirmation_user_path
+    else
+      @form.errors.add 'email_list', 'contains already-existing user'
+      return render :user
+    end
   end
 end
